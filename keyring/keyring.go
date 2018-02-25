@@ -1,7 +1,17 @@
 package keyring
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/pkg/errors"
+	"golang.org/x/crypto/openpgp"
+)
 
 func NewKeyPair(root, name, email string) error {
-	return fmt.Errorf("NYI: %v, %v, %v", root, name, email)
+	e, err := openpgp.NewEntity(name, "pm", email, nil)
+	if err != nil {
+		errors.Wrap(err, "new entity")
+	}
+	log.Printf("%+v", e)
+	return errors.New("NYI")
 }
