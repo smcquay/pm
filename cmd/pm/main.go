@@ -8,6 +8,7 @@ import (
 const usage = `pm: simple, cross-platform system package manager
 
 subcommands:
+  environ    (env) -- print environment information
   keyring    (key) -- interact with pm's OpenPGP keyring
 `
 
@@ -23,7 +24,14 @@ func main() {
 	}
 	cmd := os.Args[1]
 
+	root := os.Getenv("PM_ROOT")
+	if root == "" {
+		root = "/usr/local"
+	}
+
 	switch cmd {
+	case "env", "environ":
+		fmt.Printf("PM_ROOT=%q\n", root)
 	case "key", "keyring":
 		if len(os.Args[1:]) < 2 {
 			fatalf("pm keyring: insufficient args\n\nusage: %v", keyUsage)
