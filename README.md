@@ -49,7 +49,7 @@ following files:
 ```yaml
 name: foo
 version: 2.3.29
-platform: darwin/amd64
+namespace: /darwin/amd64
 description: Foo is the world's simplest frobnicator
 deps: [baz, bar@0.9.2]
 ```
@@ -65,3 +65,50 @@ deps: [baz, bar@0.9.2]
    contents have not been tampered with.
 0. `bin/{pre,post}-{install,ugrade,remove}` (**optional**) -- a collection of
    executables that are run at the relevant stages.
+
+As a minimum package authors are required to author the `root.tar.bz2` and the
+`meta.yaml` files, and the `pm pkg create` will generate the rest of the files,
+using the key information associated with the `PM_PGP_EMAIL` environment
+variable.
+If you can make a [tar file](https://en.wikipedia.org/wiki/Tar_(computing)) and write
+a [yaml](http://yaml.org) file, you can create a `pm`package! 
+
+
+## Remote Repositories
+
+The notion of `remote` is borrowed from [git](https://git-scm.com); a `pm`
+client can be configured to pull packages from multiple remote repositories. It
+is intended to be trivial to deploy `pmd`, and equally trivial to configure
+clients to fetch from multiple `remote`s.
+
+The example remote url:
+
+`https://pm.mcquay.me/darwin/amd64/testing`
+
+encodes a remote that is served over `https` on the host `pm.mcquay.me` and
+informs the client to pull packages from the `/darwin/amd64/testing` namespace,
+specified by the Path. `pm pull` will collect available package information
+from the remote for a given namespace and will populate its local database with
+the contents of the response. `pm` can then list available packages, and
+request that they be installed.
+
+As a practical example a client can be configured to pull from two `remotes`
+as:
+
+```bash
+$ pm add remote https://pm.mcquay.me/darwin/amd64/stable
+$ pm add remote https://pm.example.com/generic/testing
+$ pm pull
+$ pm available
+foo     0.1.2      https://pm.mcquay.me/darwin/amd64/stable
+bar     3.2.3      https://pm.mcquay.me/generic/testing
+```
+
+Here each remote advertises one package each. After pulling metadata from the
+`remote` server the client database is populated, and the user listed all
+installable packages. In the case of collisions the first configured `remote`
+offering a colliding packages will be the used.
+
+Previous versions of `pm` use to implicitly formulate namespace values based on
+host information (os and arch), but allowing package maintainers and end users
+to specify this value explicitly allows for greater flexibility. 
