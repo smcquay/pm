@@ -15,6 +15,15 @@ import (
 
 // NewKeyPair creates and adds a new OpenPGP keypair to an existing keyring.
 func NewKeyPair(root, name, email string) error {
+	if name == "" {
+		return errors.New("name cannot be empty")
+	}
+	if email == "" {
+		return errors.New("email cannot be empty")
+	}
+	if strings.ContainsAny(email, "()<>\x00") {
+		return fmt.Errorf("email %q contains invalid chars", email)
+	}
 	if err := ensureDir(root); err != nil {
 		return errors.Wrap(err, "can't find or create pgp dir")
 	}
