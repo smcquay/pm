@@ -35,3 +35,33 @@ There are two main components to this project.
 
 Securely installing the `pm` command is important. Be sure to verify its
 contents before use.
+
+## Package Format
+
+The intention is to be able to create and open package files with commonly used
+Unix utilities. The package file is an uncompressed
+[tar](https://en.wikipedia.org/wiki/Tar_(computing)) file contaning the
+following files:
+
+0. `meta.yaml` -- contains information about the package's contents, and is
+   transmitted to clients during for which available packages a remote can
+   serve, e.g.:
+```yaml
+name: foo
+version: 2.3.29
+platform: darwin/amd64
+description: Foo is the world's simplest frobnicator
+deps: [baz, bar@0.9.2]
+```
+
+0. `root.tar.bz2` -- A compressed tarball that will eventually be expanded
+   starting at `$PM_ROOT`
+0. `bom.sha256` -- [checksum](https://s.mcquay.me/sm/cs) file containing sha256
+   checksums of the expected contents of `root.tar.bz2`
+0. `manifest.sha256` -- [checksum](https://s.mcquay.me/sm/cs) file of the
+   expected contents of the `.pkg` file.
+0. `manifest.sha256.asc` -- [OpenPGP](https://www.openpgp.org) detached
+   signature for the `manifest.sha256` file. Its validity communicates that the
+   contents have not been tampered with.
+0. `bin/{pre,post}-{install,ugrade,remove}` (**optional**) -- a collection of
+   executables that are run at the relevant stages.
