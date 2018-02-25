@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
 
 	"mcquay.me/fs"
 )
@@ -102,6 +103,37 @@ func ListKeys(root string, w io.Writer) error {
 	return nil
 }
 
+// Export prints pubkey information associated with email to w.
+func Export(root string, w io.Writer, email string) error {
+	if err := ensureDir(root); err != nil {
+		return errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	_, pubs, err := getELs(srn, prn)
+	if err != nil {
+		return errors.Wrap(err, "getting existing keyrings")
+	}
+
+	e, err := findKey(pubs, email)
+	if err != nil {
+		return errors.Wrap(err, "find key")
+	}
+
+	aw, err := armor.Encode(w, openpgp.PublicKeyType, nil)
+	if err != nil {
+		return errors.Wrap(err, "creating armor encoder")
+	}
+
+	if err := e.Serialize(aw); err != nil {
+		return errors.Wrap(err, "serializing key")
+	}
+	if err := aw.Close(); err != nil {
+		return errors.Wrap(err, "closing armor encoder")
+	}
+	fmt.Fprintf(w, "\n")
+	return nil
+}
+
 func pGPDir(root string) string {
 	return filepath.Join(root, "var", "lib", "pm", "pgp")
 }
@@ -152,4 +184,31 @@ func getELs(secring, pubring string) (openpgp.EntityList, openpgp.EntityList, er
 		}
 	}
 	return sr, pr, nil
+}
+
+func findKey(el openpgp.EntityList, id string) (*openpgp.Entity, error) {
+	var e *openpgp.Entity
+	if strings.Contains(id, "@") {
+		es := openpgp.EntityList{}
+		for _, p := range el {
+			for _, v := range p.Identities {
+				if id == v.UserId.Email {
+					es = append(es, p)
+				}
+			}
+		}
+		if len(es) == 1 {
+			return es[0], nil
+		}
+		if len(es) > 1 {
+			return nil, errors.New("too many keys matched; try searching by key id?")
+		}
+	} else {
+		for _, p := range el {
+			if id == p.PrimaryKey.KeyIdShortString() {
+				return p, nil
+			}
+		}
+	}
+	return e, fmt.Errorf("key %q not found", id)
 }

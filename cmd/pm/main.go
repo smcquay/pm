@@ -19,6 +19,7 @@ const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
 
 subcommands:
   create      (c)  --  create a fresh keypair
+  export      (e)  -- export a public key to stdout
   list        (ls) --  list configured key info
 `
 
@@ -40,7 +41,7 @@ func main() {
 		if len(os.Args[1:]) < 2 {
 			fatalf("pm keyring: insufficient args\n\nusage: %v", keyUsage)
 		}
-		sub := os.Args[2]
+		sub, args := os.Args[2], os.Args[3:]
 		switch sub {
 		case "ls", "list":
 			if err := keyring.ListKeys(root, os.Stdout); err != nil {
@@ -70,6 +71,14 @@ func main() {
 
 			if err := keyring.NewKeyPair(root, name, email); err != nil {
 				fatalf("creating keypair: %v\n", err)
+			}
+		case "export", "e":
+			if len(args) != 1 {
+				fatalf("missing email argument\n")
+			}
+			email := args[0]
+			if err := keyring.Export(root, os.Stdout, email); err != nil {
+				fatalf("exporting public key for %q: %v\n", email, err)
 			}
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)
