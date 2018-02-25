@@ -134,6 +134,55 @@ func Export(root string, w io.Writer, email string) error {
 	return nil
 }
 
+// Import parses public key information from w and adds it to the public
+// keyring.
+func Import(root string, w io.Reader) error {
+	el, err := openpgp.ReadArmoredKeyRing(w)
+	if err != nil {
+		return errors.Wrap(err, "reading keyring")
+	}
+
+	if err := ensureDir(root); err != nil {
+		return errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	_, pubs, err := getELs(srn, prn)
+	if err != nil {
+		return errors.Wrap(err, "getting existing keyrings")
+	}
+
+	foreign := openpgp.EntityList{}
+	exist := map[uint64]bool{}
+	for _, p := range pubs {
+		exist[p.PrimaryKey.KeyId] = true
+	}
+
+	for _, e := range el {
+		if _, ok := exist[e.PrimaryKey.KeyId]; !ok {
+			foreign = append(foreign, e)
+		}
+	}
+	if len(foreign) < 1 {
+		return errors.New("no new key material found")
+	}
+
+	pubs = append(pubs, foreign...)
+
+	pr, err := os.Create(prn)
+	if err != nil {
+		return errors.Wrap(err, "opening pubring")
+	}
+	for _, e := range pubs {
+		if err := e.Serialize(pr); err != nil {
+			return errors.Wrapf(err, "serializing %v", e.PrimaryKey.KeyIdString())
+		}
+	}
+	if err := pr.Close(); err != nil {
+		return errors.Wrap(err, "closing pubring")
+	}
+	return nil
+}
+
 func pGPDir(root string) string {
 	return filepath.Join(root, "var", "lib", "pm", "pgp")
 }

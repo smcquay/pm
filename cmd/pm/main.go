@@ -20,6 +20,7 @@ const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
 subcommands:
   create      (c)  --  create a fresh keypair
   export      (e)  -- export a public key to stdout
+  import      (i)  -- import a public key from stdin
   list        (ls) --  list configured key info
 `
 
@@ -79,6 +80,10 @@ func main() {
 			email := args[0]
 			if err := keyring.Export(root, os.Stdout, email); err != nil {
 				fatalf("exporting public key for %q: %v\n", email, err)
+			}
+		case "i", "import":
+			if err := keyring.Import(root, os.Stdin); err != nil {
+				fatalf("importing key: %v\n", err)
 			}
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)
