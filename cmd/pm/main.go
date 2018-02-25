@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 )
@@ -39,7 +40,28 @@ func main() {
 		sub := os.Args[2]
 		switch sub {
 		case "c", "create":
-			fmt.Printf("creating keyring ...\n")
+			var name, email string
+			s := bufio.NewScanner(os.Stdin)
+
+			fmt.Printf("name: ")
+			s.Scan()
+			if err := s.Err(); err != nil {
+				fatalf("reading name: %v\n", err)
+			}
+			name = s.Text()
+
+			fmt.Printf("email: ")
+			s.Scan()
+			if err := s.Err(); err != nil {
+				fatalf("reading email: %v\n", err)
+			}
+			email = s.Text()
+
+			if err := os.Stdin.Close(); err != nil {
+				fatalf("%v\n", err)
+			}
+
+			fmt.Printf("name: %q, email: %q\n", name, email)
 			fatalf("NYI\n")
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)
