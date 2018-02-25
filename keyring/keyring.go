@@ -1,8 +1,11 @@
 package keyring
 
 import (
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
@@ -59,6 +62,33 @@ func NewKeyPair(root, name, email string) error {
 	}
 	if err := pr.Close(); err != nil {
 		return errors.Wrap(err, "closing pubring")
+	}
+	return nil
+}
+
+// ListKeys prints keyring information to w.
+func ListKeys(root string, w io.Writer) error {
+	if err := ensureDir(root); err != nil {
+		return errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	secs, pubs, err := getELs(srn, prn)
+	if err != nil {
+		return errors.Wrap(err, "getting existing keyrings")
+	}
+	for _, s := range secs {
+		names := []string{}
+		for _, v := range s.Identities {
+			names = append(names, v.Name)
+		}
+		fmt.Fprintf(w, "sec: %+v:\t%v\n", s.PrimaryKey.KeyIdShortString(), strings.Join(names, ","))
+	}
+	for _, p := range pubs {
+		names := []string{}
+		for _, v := range p.Identities {
+			names = append(names, v.Name)
+		}
+		fmt.Fprintf(w, "pub: %+v:\t%v\n", p.PrimaryKey.KeyIdShortString(), strings.Join(names, ","))
 	}
 	return nil
 }

@@ -19,6 +19,7 @@ const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
 
 subcommands:
   create      (c)  --  create a fresh keypair
+  list        (ls) --  list configured key info
 `
 
 func main() {
@@ -41,6 +42,10 @@ func main() {
 		}
 		sub := os.Args[2]
 		switch sub {
+		case "ls", "list":
+			if err := keyring.ListKeys(root, os.Stdout); err != nil {
+				fatalf("listing keypair: %v\n", err)
+			}
 		case "c", "create":
 			var name, email string
 			s := bufio.NewScanner(os.Stdin)
