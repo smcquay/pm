@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"mcquay.me/pm/keyring"
 )
 
 const usage = `pm: simple, cross-platform system package manager
@@ -61,8 +63,9 @@ func main() {
 				fatalf("%v\n", err)
 			}
 
-			fmt.Printf("name: %q, email: %q\n", name, email)
-			fatalf("NYI\n")
+			if err := keyring.NewKeyPair(root, name, email); err != nil {
+				fatalf("creating keypair: %v\n", err)
+			}
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)
 		}
