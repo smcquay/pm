@@ -22,3 +22,16 @@ version *ranges* are not.
 
 The project is currently in early design phases, and this document describes
 the high-level approach of the project.
+
+## Components
+
+There are two main components to this project.
+
+0. `pm` is the name of the client-side cli command. This is the tool used to
+   fetch, install, verify, create, upload, etc. packages.
+0. `pmd` is the name of the server-side component. It hosts packages (over
+   `http` for now), available package metadata, and cryptographic public key
+   information to clients.
+
+Securely installing the `pm` command is important. Be sure to verify its
+contents before use.
