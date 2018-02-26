@@ -22,6 +22,7 @@ subcommands:
   export      (e)  -- export a public key to stdout
   import      (i)  -- import a public key from stdin
   list        (ls) --  list configured key info
+  sign        (s)  -- sign a file
 `
 
 func main() {
@@ -34,10 +35,12 @@ func main() {
 	if root == "" {
 		root = "/usr/local"
 	}
+	signID := os.Getenv("PM_PGP_ID")
 
 	switch cmd {
 	case "env", "environ":
 		fmt.Printf("PM_ROOT=%q\n", root)
+		fmt.Printf("PM_PGP_ID=%q\n", signID)
 	case "key", "keyring":
 		if len(os.Args[1:]) < 2 {
 			fatalf("pm keyring: insufficient args\n\nusage: %v", keyUsage)
@@ -80,6 +83,13 @@ func main() {
 			email := args[0]
 			if err := keyring.Export(root, os.Stdout, email); err != nil {
 				fatalf("exporting public key for %q: %v\n", email, err)
+			}
+		case "sign", "s":
+			if signID == "" {
+				fatalf("must set PM_PGP_ID\n")
+			}
+			if err := keyring.Sign(root, signID, os.Stdin, os.Stdout); err != nil {
+				fatalf("signing: %v\n", err)
 			}
 		case "i", "import":
 			if err := keyring.Import(root, os.Stdin); err != nil {
