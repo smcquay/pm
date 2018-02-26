@@ -23,6 +23,7 @@ subcommands:
   import      (i)  -- import a public key from stdin
   list        (ls) --  list configured key info
   sign        (s)  -- sign a file
+  verify      (v)  -- verify a detached signature
 `
 
 func main() {
@@ -90,6 +91,24 @@ func main() {
 			}
 			if err := keyring.Sign(root, signID, os.Stdin, os.Stdout); err != nil {
 				fatalf("signing: %v\n", err)
+			}
+		case "verify", "v":
+			if len(args) != 2 {
+				fatalf("usage: pm key verify <file> <sig>\n")
+			}
+			fn, sn := args[0], args[1]
+			ff, err := os.Open(fn)
+			if err != nil {
+				fatalf("opening %q: %v\n", fn, err)
+			}
+			defer ff.Close()
+			sf, err := os.Open(sn)
+			if err != nil {
+				fatalf("opening %q: %v\n", fn, err)
+			}
+			defer sf.Close()
+			if err := keyring.Verify(root, ff, sf); err != nil {
+				fatalf("detached sig verify: %v\n", err)
 			}
 		case "i", "import":
 			if err := keyring.Import(root, os.Stdin); err != nil {

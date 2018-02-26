@@ -204,6 +204,22 @@ func Sign(root, id string, in io.Reader, sig io.Writer) error {
 	return nil
 }
 
+// Verify verifies a file's deatched signature.
+func Verify(root string, file, sig io.Reader) error {
+	if err := ensureDir(root); err != nil {
+		return errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	_, pubs, err := getELs(srn, prn)
+	if err != nil {
+		return errors.Wrap(err, "getting existing keyrings")
+	}
+	if _, err = openpgp.CheckArmoredDetachedSignature(pubs, file, sig); err != nil {
+		return errors.Wrap(err, "check sig")
+	}
+	return nil
+}
+
 func pGPDir(root string) string {
 	return filepath.Join(root, "var", "lib", "pm", "pgp")
 }
