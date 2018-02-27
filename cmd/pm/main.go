@@ -19,11 +19,11 @@ const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
 
 subcommands:
   create      (c)  --  create a fresh keypair
-  export      (e)  -- export a public key to stdout
-  import      (i)  -- import a public key from stdin
+  export      (e)  --  export a public key to stdout
+  import      (i)  --  import a public key from stdin
   list        (ls) --  list configured key info
-  sign        (s)  -- sign a file
-  verify      (v)  -- verify a detached signature
+  sign        (s)  --  sign a file
+  verify      (v)  --  verify a detached signature
 `
 
 func main() {
