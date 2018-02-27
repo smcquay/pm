@@ -22,6 +22,7 @@ subcommands:
   export      (e)  --  export a public key to stdout
   import      (i)  --  import a public key from stdin
   list        (ls) --  list configured key info
+  remove      (rm) --  remove a key from the keyring
   sign        (s)  --  sign a file
   verify      (v)  --  verify a detached signature
 `
@@ -113,6 +114,14 @@ func main() {
 		case "i", "import":
 			if err := keyring.Import(root, os.Stdin); err != nil {
 				fatalf("importing key: %v\n", err)
+			}
+		case "remove", "rm":
+			if len(args) != 1 {
+				fatalf("missing key id\n\nusage: pm key remove <id>\n")
+			}
+			id := args[0]
+			if err := keyring.Remove(root, id); err != nil {
+				fatalf("removing key for %q: %v\n", id, err)
 			}
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)

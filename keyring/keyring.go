@@ -220,6 +220,48 @@ func Verify(root string, file, sig io.Reader) error {
 	return nil
 }
 
+// Remove removes public key information for a given id.
+//
+// It skips public keys that have matching secret keys, and does not effect
+// private keys.
+func Remove(root string, id string) error {
+	if err := ensureDir(root); err != nil {
+		return errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	secs, pubs, err := getELs(srn, prn)
+	if err != nil {
+		return errors.Wrap(err, "getting existing keyrings")
+	}
+	victim, err := findKey(pubs, id)
+	if err != nil {
+		return errors.Wrapf(err, "finding key %q", id)
+	}
+
+	pr, err := os.Create(prn)
+	if err != nil {
+		return errors.Wrap(err, "opening pubring")
+	}
+	var rerr error
+	for _, p := range pubs {
+		if victim.PrimaryKey.KeyId == p.PrimaryKey.KeyId {
+			if len(secs.KeysById(victim.PrimaryKey.KeyId)) == 0 {
+				continue
+			}
+			rerr = fmt.Errorf("skipping pubkey with matching privkey: %v", p.PrimaryKey.KeyIdShortString())
+		}
+
+		if err := p.Serialize(pr); err != nil {
+			return errors.Wrapf(err, "serializing %v", p.PrimaryKey.KeyIdString())
+		}
+	}
+	if err := pr.Close(); err != nil {
+		return errors.Wrap(err, "closing pubring")
+	}
+
+	return rerr
+}
+
 func pGPDir(root string) string {
 	return filepath.Join(root, "var", "lib", "pm", "pgp")
 }
