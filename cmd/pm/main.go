@@ -153,7 +153,7 @@ func main() {
 				fatalf("usage: pm package create <directory>\n")
 			}
 			dir := args[0]
-			if err := pkg.Create(dir, signID); err != nil {
+			if err := pkg.Create(root, signID, dir); err != nil {
 				fatalf("creating package: %v\n", err)
 			}
 		default:

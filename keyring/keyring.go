@@ -328,3 +328,8 @@ func findKey(el openpgp.EntityList, id string) (*openpgp.Entity, error) {
 	}
 	return e, fmt.Errorf("key %q not found", id)
 }
+
+// FindSecretEntity searches for id in the secret keyring.
+func FindSecretEntity(root, id string) (*openpgp.Entity, error) {
+	return nil, errors.New("NYI")
+}
