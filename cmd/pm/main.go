@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"mcquay.me/pm/keyring"
+	"mcquay.me/pm/pkg"
 )
 
 const usage = `pm: simple, cross-platform system package manager
@@ -13,6 +14,7 @@ const usage = `pm: simple, cross-platform system package manager
 subcommands:
   environ    (env) -- print environment information
   keyring    (key) -- interact with pm's OpenPGP keyring
+  package    (pkg) -- create packages
 `
 
 const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
@@ -25,6 +27,12 @@ subcommands:
   remove      (rm) --  remove a key from the keyring
   sign        (s)  --  sign a file
   verify      (v)  --  verify a detached signature
+`
+
+const pkgUsage = `pm package: generate pm-compatible packages
+
+subcommands:
+  create      (c)  --  create a fresh keypair
 `
 
 func main() {
@@ -129,6 +137,27 @@ func main() {
 			}
 		default:
 			fatalf("unknown keyring subcommand: %q\n\nusage: %v", sub, keyUsage)
+		}
+	case "package", "pkg":
+		if len(os.Args[1:]) < 2 {
+			fatalf("pm package: insufficient args\n\nusage: %v", pkgUsage)
+		}
+		sub := os.Args[2]
+		switch sub {
+		case "create", "creat", "c":
+			if signID == "" {
+				fatalf("must set PM_PGP_ID\n")
+			}
+			args := os.Args[3:]
+			if len(args) != 1 {
+				fatalf("usage: pm package create <directory>\n")
+			}
+			dir := args[0]
+			if err := pkg.Create(dir, signID); err != nil {
+				fatalf("creating package: %v\n", err)
+			}
+		default:
+			fatalf("unknown package subcommand: %q\n\nusage: %v", sub, pkgUsage)
 		}
 	default:
 		fatalf("uknown subcommand %q\n\nusage: %v", cmd, usage)
