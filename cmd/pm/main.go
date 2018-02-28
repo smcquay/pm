@@ -153,7 +153,11 @@ func main() {
 				fatalf("usage: pm package create <directory>\n")
 			}
 			dir := args[0]
-			if err := pkg.Create(root, signID, dir); err != nil {
+			e, err := keyring.FindSecretEntity(root, signID)
+			if err != nil {
+				fatalf("find secret key: %v\n", err)
+			}
+			if err := pkg.Create(e, dir); err != nil {
 				fatalf("creating package: %v\n", err)
 			}
 		default:
