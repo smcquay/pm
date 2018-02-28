@@ -331,5 +331,13 @@ func findKey(el openpgp.EntityList, id string) (*openpgp.Entity, error) {
 
 // FindSecretEntity searches for id in the secret keyring.
 func FindSecretEntity(root, id string) (*openpgp.Entity, error) {
-	return nil, errors.New("NYI")
+	if err := ensureDir(root); err != nil {
+		return nil, errors.Wrap(err, "can't find or create pgp dir")
+	}
+	srn, prn := getNames(root)
+	secs, _, err := getELs(srn, prn)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting existing keyrings")
+	}
+	return findKey(secs, id)
 }
