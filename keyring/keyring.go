@@ -184,20 +184,8 @@ func Import(root string, w io.Reader) error {
 }
 
 // Sign takes an id and a reader and writes the signature for that id to sig.
-func Sign(root, id string, in io.Reader, sig io.Writer) error {
-	if err := ensureDir(root); err != nil {
-		return errors.Wrap(err, "can't find or create pgp dir")
-	}
-	srn, prn := getNames(root)
-	secs, _, err := getELs(srn, prn)
-	if err != nil {
-		return errors.Wrap(err, "getting existing keyrings")
-	}
-	e, err := findKey(secs, id)
-	if err != nil {
-		return errors.Wrapf(err, "finding key %q", id)
-	}
-	if err := openpgp.ArmoredDetachSign(sig, e, in, nil); err != nil {
+func Sign(key *openpgp.Entity, in io.Reader, sig io.Writer) error {
+	if err := openpgp.ArmoredDetachSign(sig, key, in, nil); err != nil {
 		return errors.Wrap(err, "armored detach sign")
 	}
 	fmt.Fprintf(sig, "\n")

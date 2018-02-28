@@ -90,7 +90,11 @@ func main() {
 			if signID == "" {
 				fatalf("must set PM_PGP_ID\n")
 			}
-			if err := keyring.Sign(root, signID, os.Stdin, os.Stdout); err != nil {
+			e, err := keyring.FindSecretEntity(root, signID)
+			if err != nil {
+				fatalf("find secret key: %v\n", err)
+			}
+			if err := keyring.Sign(e, os.Stdin, os.Stdout); err != nil {
 				fatalf("signing: %v\n", err)
 			}
 		case "verify", "v":
