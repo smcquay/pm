@@ -138,3 +138,13 @@ func strip(u url.URL) url.URL {
 		Path:   u.Path,
 	}
 }
+
+func mkdirs(root string) error {
+	d, _ := filepath.Split(filepath.Join(root, fn))
+	if !fs.Exists(d) {
+		if err := os.MkdirAll(d, 0700); err != nil {
+			return errors.Wrap(err, "mk pm dir")
+		}
+	}
+	return nil
+}
