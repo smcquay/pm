@@ -7,6 +7,7 @@ import (
 
 	"mcquay.me/pm/keyring"
 	"mcquay.me/pm/pkg"
+	"mcquay.me/pm/remote"
 )
 
 const usage = `pm: simple, cross-platform system package manager
@@ -14,6 +15,7 @@ const usage = `pm: simple, cross-platform system package manager
 subcommands:
   environ    (env) -- print environment information
   keyring    (key) -- interact with pm's OpenPGP keyring
+  remote           -- configure remote pmd servers
   package    (pkg) -- create packages
 `
 
@@ -33,6 +35,14 @@ const pkgUsage = `pm package: generate pm-compatible packages
 
 subcommands:
   create      (c)  --  create a fresh keypair
+`
+
+const remoteUsage = `pm remote: configure remote pmd servers
+
+subcommands:
+  add         (a)  --  add a URI
+  ls               --  list configured remotes
+  rm               --  remove a URI
 `
 
 func main() {
@@ -162,6 +172,29 @@ func main() {
 			}
 		default:
 			fatalf("unknown package subcommand: %q\n\nusage: %v", sub, pkgUsage)
+		}
+	case "remote":
+		if len(os.Args[1:]) < 2 {
+			fatalf("pm remote: insufficient args\n\nusage: %v", remoteUsage)
+		}
+		sub := os.Args[2]
+		args := os.Args[3:]
+
+		switch sub {
+		case "add", "a":
+			if err := remote.Add(root, args); err != nil {
+				fatalf("remote add: %v\n", err)
+			}
+		case "rm":
+			if err := remote.Remove(root, args); err != nil {
+				fatalf("remote remove: %v\n", err)
+			}
+		case "ls":
+			if err := remote.List(root, os.Stdout); err != nil {
+				fatalf("list: %v\n", err)
+			}
+		default:
+			fatalf("unknown package subcommand: %q\n\nusage: %v", sub, remoteUsage)
 		}
 	default:
 		fatalf("uknown subcommand %q\n\nusage: %v", cmd, usage)
