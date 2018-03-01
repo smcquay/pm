@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/pkg/errors"
+	"mcquay.me/fs"
 	"mcquay.me/pm/keyring"
 	"mcquay.me/pm/pkg"
 	"mcquay.me/pm/remote"
@@ -180,6 +183,10 @@ func main() {
 		sub := os.Args[2]
 		args := os.Args[3:]
 
+		if err := mkdirs(root); err != nil {
+			fatalf("making pm var directories: %v\n", err)
+		}
+
 		switch sub {
 		case "add", "a":
 			if len(args) < 1 {
@@ -210,4 +217,14 @@ func main() {
 func fatalf(f string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, f, args...)
 	os.Exit(1)
+}
+
+func mkdirs(root string) error {
+	d := filepath.Join(root, "var", "lib", "pm")
+	if !fs.Exists(d) {
+		if err := os.MkdirAll(d, 0700); err != nil {
+			return errors.Wrap(err, "mk pm dir")
+		}
+	}
+	return nil
 }
