@@ -23,8 +23,8 @@ subcommands:
   create      (c)  --  create a fresh keypair
   export      (e)  --  export a public key to stdout
   import      (i)  --  import a public key from stdin
-  list        (ls) --  list configured key info
-  remove      (rm) --  remove a key from the keyring
+  ls               --  list configured key info
+  rm               --  remove a key from the keyring
   sign        (s)  --  sign a file
   verify      (v)  --  verify a detached signature
 `
@@ -57,7 +57,7 @@ func main() {
 		}
 		sub, args := os.Args[2], os.Args[3:]
 		switch sub {
-		case "ls", "list":
+		case "ls":
 			if err := keyring.ListKeys(root, os.Stdout); err != nil {
 				fatalf("listing keypair: %v\n", err)
 			}
@@ -127,7 +127,7 @@ func main() {
 			if err := keyring.Import(root, os.Stdin); err != nil {
 				fatalf("importing key: %v\n", err)
 			}
-		case "remove", "rm":
+		case "rm":
 			if len(args) != 1 {
 				fatalf("missing key id\n\nusage: pm key remove <id>\n")
 			}
