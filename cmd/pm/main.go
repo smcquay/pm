@@ -182,10 +182,16 @@ func main() {
 
 		switch sub {
 		case "add", "a":
+			if len(args) < 1 {
+				fatalf("missing arg\n\nusage: pm remote add [<uris>]\n")
+			}
 			if err := remote.Add(root, args); err != nil {
 				fatalf("remote add: %v\n", err)
 			}
 		case "rm":
+			if len(args) < 1 {
+				fatalf("missing arg\n\nusage: pm remote rm [<uris>]\n")
+			}
 			if err := remote.Remove(root, args); err != nil {
 				fatalf("remote remove: %v\n", err)
 			}
