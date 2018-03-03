@@ -49,7 +49,6 @@ following files:
 ```yaml
 name: foo
 version: 2.3.29
-namespace: /darwin/amd64
 description: Foo is the world's simplest frobnicator
 deps: [baz, bar@0.9.2]
 ```
@@ -88,8 +87,8 @@ The example remote url:
 encodes a remote that is served over `https` on the host `pm.mcquay.me` and
 informs the client to pull packages from the `/darwin/amd64/testing` namespace,
 specified by the Path. `pm pull` will collect available package information
-from the remote for a given namespace and will populate its local database with
-the contents of the response. `pm` can then list available packages, and
+from configured remote and will populate its local database with the contents
+of the response. `pm` can then list available packages, and the user can then
 request that they be installed.
 
 As a practical example a client can be configured to pull from two `remotes`
