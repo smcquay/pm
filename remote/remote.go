@@ -46,7 +46,7 @@ func Add(root string, uris []string) error {
 	return save(root, db)
 }
 
-// Add removes the given uri from the list of configured remotes.
+// Remove removes the given uri from the list of configured remotes.
 func Remove(root string, uris []string) error {
 	db, err := load(root)
 	if err != nil {

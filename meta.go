@@ -2,6 +2,7 @@ package pm
 
 import "errors"
 
+// Meta tracks metadata for a package
 type Meta struct {
 	Name        Name    `json:"name"`
 	Version     Version `json:"version"`
@@ -9,6 +10,7 @@ type Meta struct {
 	Namespace   string  `json:"namespace"`
 }
 
+// Valid validates the contents of a Meta for requires fields.
 func (m *Meta) Valid() (bool, error) {
 	if m.Name == "" {
 		return false, errors.New("name cannot be empty")
