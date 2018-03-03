@@ -3,10 +3,10 @@ package pm
 import "errors"
 
 type Meta struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	Namespace   string `json:"namespace"`
+	Name        Name    `json:"name"`
+	Version     Version `json:"version"`
+	Description string  `json:"description"`
+	Namespace   string  `json:"namespace"`
 }
 
 func (m *Meta) Valid() (bool, error) {
