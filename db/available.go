@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 
 	"github.com/pkg/errors"
 	"mcquay.me/fs"
@@ -56,22 +55,8 @@ func ListAvailable(root string, w io.Writer) error {
 	if err != nil {
 		return errors.Wrap(err, "loading")
 	}
-	names := pm.Names{}
-	nvs := map[pm.Name]pm.Versions{}
-	for n, vers := range db {
-		names = append(names, n)
-		for v := range vers {
-			nvs[n] = append(nvs[n], v)
-		}
-		sort.Sort(nvs[n])
-	}
-	sort.Sort(names)
-
-	for _, n := range names {
-		for _, v := range nvs[n] {
-			m := db[n][v]
-			fmt.Fprintf(w, "%v\t%v\t%v\n", m.Name, m.Version, m.Remote.String())
-		}
+	for m := range db.Traverse() {
+		fmt.Fprintf(w, "%v\t%v\t%v\n", m.Name, m.Version, m.Remote.String())
 	}
 	return nil
 }

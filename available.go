@@ -2,6 +2,7 @@ package pm
 
 import (
 	"net/url"
+	"sort"
 
 	"github.com/pkg/errors"
 )
@@ -61,4 +62,28 @@ func (a Available) SetRemote(u url.URL) {
 			a[n][v] = m
 		}
 	}
+}
+
+func (a Available) Traverse() <-chan Meta {
+	r := make(chan Meta)
+	go func() {
+		names := Names{}
+		nvs := map[Name]Versions{}
+		for n, vers := range a {
+			names = append(names, n)
+			for v := range vers {
+				nvs[n] = append(nvs[n], v)
+			}
+			sort.Sort(nvs[n])
+		}
+		sort.Sort(names)
+
+		for _, n := range names {
+			for _, v := range nvs[n] {
+				r <- a[n][v]
+			}
+		}
+		close(r)
+	}()
+	return r
 }
