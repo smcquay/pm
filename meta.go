@@ -10,7 +10,6 @@ type Meta struct {
 	Name        Name    `json:"name"`
 	Version     Version `json:"version"`
 	Description string  `json:"description"`
-	Namespace   string  `json:"namespace"`
 
 	Remote url.URL `json:"remote"`
 }

@@ -24,16 +24,6 @@ func TestValid(t *testing.T) {
 			ok: true,
 		},
 		{
-			label: "valid with namespace",
-			m: Meta{
-				Name:        "heat",
-				Version:     "1.1.0",
-				Description: "some description",
-				Namespace:   "some/namespace",
-			},
-			ok: true,
-		},
-		{
 			label: "missing name",
 			m: Meta{
 				Version:     "1.1.0",
@@ -78,7 +68,6 @@ func TestJsonRoundTrip(t *testing.T) {
 		Name:        "heat",
 		Version:     "1.1.0",
 		Description: "make heat using cpus",
-		Namespace:   "/darwin/amd64",
 	}
 
 	buf := &bytes.Buffer{}
