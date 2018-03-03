@@ -10,6 +10,7 @@ import (
 // Name exists to document the keys in Available
 type Name string
 
+// Names is a slice of names ... with sorting!
 type Names []Name
 
 func (n Names) Len() int           { return len(n) }
@@ -18,6 +19,8 @@ func (n Names) Less(a, b int) bool { return n[a] < n[b] }
 
 // Version exists to document the keys in Available
 type Version string
+
+// Versions is a slice of Version ... with sorting!
 type Versions []Version
 
 // TODO (sm): make this semver sort?
@@ -54,9 +57,10 @@ func (a Available) Update(o Available) error {
 	return nil
 }
 
+// SetRemote adds the information in the url to the database.
 func (a Available) SetRemote(u url.URL) {
 	for n, vers := range a {
-		for v, _ := range vers {
+		for v := range vers {
 			m := a[n][v]
 			m.Remote = u
 			a[n][v] = m
@@ -64,6 +68,7 @@ func (a Available) SetRemote(u url.URL) {
 	}
 }
 
+// Traverse returns a chan of Meta that will be sanely sorted.
 func (a Available) Traverse() <-chan Meta {
 	r := make(chan Meta)
 	go func() {

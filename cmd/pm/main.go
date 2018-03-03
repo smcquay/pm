@@ -13,6 +13,7 @@ import (
 	"mcquay.me/pm/pkg"
 )
 
+// Version stores the current version, and is updated at build time.
 const Version = "dev"
 
 const usage = `pm: simple, cross-platform system package manager
