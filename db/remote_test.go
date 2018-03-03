@@ -79,7 +79,7 @@ func TestAdd(t *testing.T) {
 		}
 	}
 
-	if err := Add(root, uris); err == nil {
+	if err := AddRemotes(root, uris); err == nil {
 		t.Fatalf("did not detect duplicate, and should have")
 	}
 }
@@ -88,7 +88,7 @@ func TestRemove(t *testing.T) {
 	root, del := dirMe(t)
 	defer del()
 
-	if err := Remove(root, nil); err == nil {
+	if err := RemoveRemotes(root, nil); err == nil {
 		t.Fatalf("should have returned error on empty db")
 	}
 
@@ -98,14 +98,14 @@ func TestRemove(t *testing.T) {
 		"https://pm.mcquay.me/baz",
 	}
 
-	if err := Remove(root, uris); err == nil {
+	if err := RemoveRemotes(root, uris); err == nil {
 		t.Fatalf("should have returned error asking to remove many uri on empty db")
 	}
 
-	if err := Add(root, uris); err != nil {
+	if err := AddRemotes(root, uris); err != nil {
 		t.Fatalf("add: %v", err)
 	}
-	if err := Remove(root, uris[1:2]); err != nil {
+	if err := RemoveRemotes(root, uris[1:2]); err != nil {
 		t.Fatalf("remove: %v", err)
 	}
 	db, err := load(root)
@@ -139,12 +139,12 @@ func TestList(t *testing.T) {
 		"https://pm.mcquay.me/baz",
 	}
 
-	if err := Add(root, uris); err != nil {
+	if err := AddRemotes(root, uris); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
 	buf := &bytes.Buffer{}
-	if err := List(root, buf); err != nil {
+	if err := ListRemotes(root, buf); err != nil {
 		t.Fatalf("list: %v", err)
 	}
 
