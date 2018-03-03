@@ -1,4 +1,4 @@
-package remote
+package db
 
 import (
 	"bytes"
@@ -46,7 +46,7 @@ func TestAdd(t *testing.T) {
 		"http\ns://\nFoo|n",
 	}
 
-	if err := Add(root, bad); err == nil {
+	if err := AddRemotes(root, bad); err == nil {
 		t.Fatalf("didn't detect bad url")
 	}
 
@@ -54,7 +54,7 @@ func TestAdd(t *testing.T) {
 		"https://pm.mcquay.me/darwin/amd64",
 	}
 
-	if err := Add(root, uris); err != nil {
+	if err := AddRemotes(root, uris); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 

@@ -1,4 +1,4 @@
-package remote
+package db
 
 import (
 	"encoding/json"
@@ -17,8 +17,8 @@ type DB []url.URL
 
 const rn = "var/lib/pm/remotes.json"
 
-// Add appends the provided uri to the list of configured remotes.
-func Add(root string, uris []string) error {
+// AddRemotes appends the provided uri to the list of configured remotes.
+func AddRemotes(root string, uris []string) error {
 	db, err := load(root)
 	if err != nil {
 		return errors.Wrap(err, "loading")
@@ -46,8 +46,8 @@ func Add(root string, uris []string) error {
 	return save(root, db)
 }
 
-// Remove removes the given uri from the list of configured remotes.
-func Remove(root string, uris []string) error {
+// RemoveRemotes removes the given uri from the list of configured remotes.
+func RemoveRemotes(root string, uris []string) error {
 	db, err := load(root)
 	if err != nil {
 		return errors.Wrap(err, "loading")
@@ -79,8 +79,8 @@ func Remove(root string, uris []string) error {
 	return save(root, o)
 }
 
-// List prints all configured remotes to w.
-func List(root string, w io.Writer) error {
+// ListRemotes prints all configured remotes to w.
+func ListRemotes(root string, w io.Writer) error {
 	db, err := load(root)
 	if err != nil {
 		return errors.Wrap(err, "loading")

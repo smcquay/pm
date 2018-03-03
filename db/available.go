@@ -1,12 +1,16 @@
-package remote
+package db
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/pkg/errors"
+	"mcquay.me/fs"
 	"mcquay.me/pm"
 )
 
@@ -44,6 +48,52 @@ func Pull(root string) error {
 		return errors.Wrap(err, "saving available db")
 	}
 	return nil
+}
+
+// ListAvailable prints all installable packages
+func ListAvailable(root string, w io.Writer) error {
+	db, err := loadAvailable(root)
+	if err != nil {
+		return errors.Wrap(err, "loading")
+	}
+	names := pm.Names{}
+	nvs := map[pm.Name]pm.Versions{}
+	for n, vers := range db {
+		names = append(names, n)
+		for v := range vers {
+			nvs[n] = append(nvs[n], v)
+		}
+		sort.Sort(nvs[n])
+	}
+	sort.Sort(names)
+
+	for _, n := range names {
+		for _, v := range nvs[n] {
+			m := db[n][v]
+			fmt.Fprintf(w, "%v\t%v\t%v\n", m.Name, m.Version, m.Remote.String())
+		}
+	}
+	return nil
+}
+
+func loadAvailable(root string) (pm.Available, error) {
+	r := pm.Available{}
+	dbn := filepath.Join(root, rn)
+
+	if !fs.Exists(dbn) {
+		return r, nil
+	}
+
+	f, err := os.Open(filepath.Join(root, an))
+	if err != nil {
+		return r, errors.Wrap(err, "open")
+	}
+
+	if err := json.NewDecoder(f).Decode(&r); err != nil {
+		return r, errors.Wrap(err, "decoding db")
+	}
+
+	return r, nil
 }
 
 func saveAvailable(root string, db pm.Available) error {

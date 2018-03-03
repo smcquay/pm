@@ -8,14 +8,15 @@ import (
 
 	"github.com/pkg/errors"
 	"mcquay.me/fs"
+	"mcquay.me/pm/db"
 	"mcquay.me/pm/keyring"
 	"mcquay.me/pm/pkg"
-	"mcquay.me/pm/remote"
 )
 
 const usage = `pm: simple, cross-platform system package manager
 
 subcommands:
+  available  (av)  -- print out all installable packages
   environ    (env) -- print environment information
   keyring    (key) -- interact with pm's OpenPGP keyring
   package    (pkg) -- create packages
@@ -193,25 +194,29 @@ func main() {
 			if len(args) < 1 {
 				fatalf("missing arg\n\nusage: pm remote add [<uris>]\n")
 			}
-			if err := remote.Add(root, args); err != nil {
+			if err := db.AddRemotes(root, args); err != nil {
 				fatalf("remote add: %v\n", err)
 			}
 		case "rm":
 			if len(args) < 1 {
 				fatalf("missing arg\n\nusage: pm remote rm [<uris>]\n")
 			}
-			if err := remote.Remove(root, args); err != nil {
+			if err := db.RemoveRemotes(root, args); err != nil {
 				fatalf("remote remove: %v\n", err)
 			}
 		case "ls":
-			if err := remote.List(root, os.Stdout); err != nil {
+			if err := db.ListRemotes(root, os.Stdout); err != nil {
 				fatalf("list: %v\n", err)
 			}
 		default:
 			fatalf("unknown package subcommand: %q\n\nusage: %v", sub, remoteUsage)
 		}
 	case "pull":
-		if err := remote.Pull(root); err != nil {
+		if err := db.Pull(root); err != nil {
+			fatalf("pulling available packages: %v\n", err)
+		}
+	case "available", "av":
+		if err := db.ListAvailable(root, os.Stdout); err != nil {
 			fatalf("pulling available packages: %v\n", err)
 		}
 	default:

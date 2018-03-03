@@ -9,8 +9,20 @@ import (
 // Name exists to document the keys in Available
 type Name string
 
+type Names []Name
+
+func (n Names) Len() int           { return len(n) }
+func (n Names) Swap(a, b int)      { n[a], n[b] = n[b], n[a] }
+func (n Names) Less(a, b int) bool { return n[a] < n[b] }
+
 // Version exists to document the keys in Available
 type Version string
+type Versions []Version
+
+// TODO (sm): make this semver sort?
+func (n Versions) Len() int           { return len(n) }
+func (n Versions) Swap(a, b int)      { n[a], n[b] = n[b], n[a] }
+func (n Versions) Less(a, b int) bool { return n[a] < n[b] }
 
 // Available is the structure used to represent the collection of all packages
 // that can be installed.
