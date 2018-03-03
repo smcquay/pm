@@ -14,8 +14,10 @@ import (
 
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/openpgp"
+	yaml "gopkg.in/yaml.v2"
 
 	"mcquay.me/fs"
+	"mcquay.me/pm"
 
 	"mcquay.me/pm/keyring"
 )
@@ -86,6 +88,18 @@ func Create(key *openpgp.Entity, dir string) error {
 	}
 	if _, ok := found["meta.yaml"]; !ok {
 		return fmt.Errorf("did not find meta.yaml")
+	}
+
+	mf, err := os.Open(filepath.Join(dir, "meta.yaml"))
+	if err != nil {
+		return errors.Wrap(err, "opening metadata file")
+	}
+	md := pm.Meta{}
+	if err := yaml.NewDecoder(mf).Decode(&md); err != nil {
+		return errors.Wrap(err, "decoding metadata file")
+	}
+	if _, err := md.Valid(); err != nil {
+		return errors.Wrap(err, "invalid metadata")
 	}
 
 	f, err := os.Open(filepath.Join(dir, "root.tar.bz2"))
@@ -162,7 +176,7 @@ func Create(key *openpgp.Entity, dir string) error {
 	sort.Strings(files)
 
 	tn, pn := filepath.Split(dir)
-	tn = filepath.Join(tn, pn+".pkg")
+	tn = filepath.Join(tn, fmt.Sprintf("%v-%v.pkg", pn, md.Version))
 	tf, err := os.Create(tn)
 	if err != nil {
 		return errors.Wrap(err, "opening final .pkg")
