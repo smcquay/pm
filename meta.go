@@ -1,6 +1,9 @@
 package pm
 
-import "errors"
+import (
+	"errors"
+	"net/url"
+)
 
 // Meta tracks metadata for a package
 type Meta struct {
@@ -8,6 +11,8 @@ type Meta struct {
 	Version     Version `json:"version"`
 	Description string  `json:"description"`
 	Namespace   string  `json:"namespace"`
+
+	Remote url.URL `json:"remote"`
 }
 
 // Valid validates the contents of a Meta for requires fields.

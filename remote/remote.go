@@ -15,7 +15,7 @@ import (
 // DB is a slice of available URI
 type DB []url.URL
 
-const fn = "var/lib/pm/available.json"
+const rn = "var/lib/pm/remotes.json"
 
 // Add appends the provided uri to the list of configured remotes.
 func Add(root string, uris []string) error {
@@ -93,13 +93,13 @@ func List(root string, w io.Writer) error {
 
 func load(root string) (DB, error) {
 	r := DB{}
-	dbn := filepath.Join(root, fn)
+	dbn := filepath.Join(root, rn)
 
 	if !fs.Exists(dbn) {
 		return r, nil
 	}
 
-	f, err := os.Open(filepath.Join(root, fn))
+	f, err := os.Open(filepath.Join(root, rn))
 	if err != nil {
 		return r, errors.Wrap(err, "open")
 	}
@@ -112,7 +112,7 @@ func load(root string) (DB, error) {
 }
 
 func save(root string, db DB) error {
-	f, err := os.Create(filepath.Join(root, fn))
+	f, err := os.Create(filepath.Join(root, rn))
 	if err != nil {
 		return errors.Wrap(err, "create")
 	}
@@ -140,7 +140,7 @@ func strip(u url.URL) url.URL {
 }
 
 func mkdirs(root string) error {
-	d, _ := filepath.Split(filepath.Join(root, fn))
+	d, _ := filepath.Split(filepath.Join(root, rn))
 	if !fs.Exists(d) {
 		if err := os.MkdirAll(d, 0700); err != nil {
 			return errors.Wrap(err, "mk pm dir")

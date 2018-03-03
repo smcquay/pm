@@ -1,6 +1,8 @@
 package pm
 
 import (
+	"net/url"
+
 	"github.com/pkg/errors"
 )
 
@@ -37,4 +39,14 @@ func (a Available) Update(o Available) error {
 		}
 	}
 	return nil
+}
+
+func (a Available) SetRemote(u url.URL) {
+	for n, vers := range a {
+		for v, _ := range vers {
+			m := a[n][v]
+			m.Remote = u
+			a[n][v] = m
+		}
+	}
 }

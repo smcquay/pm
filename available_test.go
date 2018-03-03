@@ -2,6 +2,7 @@ package pm
 
 import (
 	"errors"
+	"net/url"
 	"testing"
 )
 
@@ -90,6 +91,15 @@ func TestAvailableUpdate(t *testing.T) {
 	}
 
 	if got, want := a["a"]["v1.0.0"].Description, "test last in"; got != want {
+		t.Fatalf("last in didn't override")
+	}
+
+	u, err := url.Parse("https://pm.mcquay.me/darwin/amd64")
+	if err != nil {
+		t.Fatalf("parsing url: %v", err)
+	}
+	a.SetRemote(*u)
+	if got, want := a["a"]["v1.0.0"].Remote, *u; got != want {
 		t.Fatalf("last in didn't override")
 	}
 }
