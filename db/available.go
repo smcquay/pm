@@ -39,7 +39,7 @@ func Pull(root string) error {
 
 		a := pm.Available{}
 		if err := json.NewDecoder(resp.Body).Decode(&a); err != nil {
-			return errors.Wrap(err, "decode remote available")
+			return errors.Wrapf(err, "decode remote available for %q", u.String())
 		}
 		a.SetRemote(u)
 		o.Update(a)
