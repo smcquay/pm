@@ -13,6 +13,8 @@ import (
 	"mcquay.me/pm/pkg"
 )
 
+const Version = "dev"
+
 const usage = `pm: simple, cross-platform system package manager
 
 subcommands:
@@ -22,6 +24,7 @@ subcommands:
   package    (pkg) -- create packages
   pull             -- fetch all available packages from all configured remotes
   remote           -- configure remote pmd servers
+  version    (v)   -- print version information
 `
 
 const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
@@ -219,6 +222,8 @@ func main() {
 		if err := db.ListAvailable(root, os.Stdout); err != nil {
 			fatalf("pulling available packages: %v\n", err)
 		}
+	case "version", "v":
+		fmt.Printf("pm: version %v\n", Version)
 	default:
 		fatalf("uknown subcommand %q\n\nusage: %v", cmd, usage)
 	}
