@@ -18,8 +18,9 @@ const usage = `pm: simple, cross-platform system package manager
 subcommands:
   environ    (env) -- print environment information
   keyring    (key) -- interact with pm's OpenPGP keyring
-  remote           -- configure remote pmd servers
   package    (pkg) -- create packages
+  pull             -- fetch all available packages from all configured remotes
+  remote           -- configure remote pmd servers
 `
 
 const keyUsage = `pm keyring: interact with pm's OpenPGP keyring
@@ -208,6 +209,10 @@ func main() {
 			}
 		default:
 			fatalf("unknown package subcommand: %q\n\nusage: %v", sub, remoteUsage)
+		}
+	case "pull":
+		if err := remote.Pull(root); err != nil {
+			fatalf("pulling available packages: %v\n", err)
 		}
 	default:
 		fatalf("uknown subcommand %q\n\nusage: %v", cmd, usage)
