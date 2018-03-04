@@ -1,7 +1,9 @@
 package pkg
 
 import (
+	"archive/tar"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +12,7 @@ import (
 	"mcquay.me/fs"
 	"mcquay.me/pm"
 	"mcquay.me/pm/db"
+	"mcquay.me/pm/keyring"
 )
 
 const cache = "var/cache/pm"
@@ -40,6 +43,11 @@ func Install(root string, pkgs []string) error {
 		return errors.Wrap(err, "downloading")
 	}
 
+	for _, m := range ms {
+		if err := verifyManifestIntegrity(root, m); err != nil {
+			return errors.Wrap(err, "verifying pkg integrity")
+		}
+	}
 	return errors.New("NYI")
 }
 
@@ -65,4 +73,61 @@ func download(cache string, ms pm.Metas) error {
 		}
 	}
 	return nil
+}
+
+func verifyManifestIntegrity(root string, m pm.Meta) error {
+	pn := filepath.Join(root, cache, m.Pkg())
+	man, err := getReadCloser(pn, "manifest.sha256")
+	if err != nil {
+		return errors.Wrap(err, "getting manifest reader")
+	}
+	sig, err := getReadCloser(pn, "manifest.sha256.asc")
+	if err != nil {
+		return errors.Wrap(err, "getting manifest reader")
+	}
+
+	if err := keyring.Verify(root, man, sig); err != nil {
+		return errors.Wrap(err, "verifying manifest")
+	}
+	if err := man.Close(); err != nil {
+		return errors.Wrap(err, "closing manifest reader")
+	}
+	if err := sig.Close(); err != nil {
+		return errors.Wrap(err, "closing manifest signature reader")
+	}
+	return nil
+}
+
+type tarSlurper struct {
+	f  *os.File
+	tr *tar.Reader
+}
+
+func (ts *tarSlurper) Close() error {
+	return ts.f.Close()
+}
+
+func (ts *tarSlurper) Read(p []byte) (int, error) {
+	return ts.tr.Read(p)
+}
+
+func getReadCloser(tn, fn string) (io.ReadCloser, error) {
+	pf, err := os.Open(tn)
+	if err != nil {
+		return nil, errors.Wrap(err, "opening pkg file")
+	}
+	tr := tar.NewReader(pf)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "tar traversal")
+		}
+		if hdr.Name == fn {
+			return &tarSlurper{pf, tr}, nil
+		}
+	}
+	return nil, errors.Errorf("%q not found", fn)
 }
