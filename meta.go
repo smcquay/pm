@@ -27,3 +27,6 @@ func (m *Meta) Valid() (bool, error) {
 	}
 	return true, nil
 }
+
+// Metas is a slice of Meta
+type Metas []Meta
