@@ -15,7 +15,7 @@ type Meta struct {
 }
 
 // Valid validates the contents of a Meta for requires fields.
-func (m *Meta) Valid() (bool, error) {
+func (m Meta) Valid() (bool, error) {
 	if m.Name == "" {
 		return false, errors.New("name cannot be empty")
 	}
