@@ -2,11 +2,15 @@ package pkg
 
 import (
 	"archive/tar"
+	"bufio"
+	"crypto/sha256"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	"mcquay.me/fs"
@@ -44,8 +48,12 @@ func Install(root string, pkgs []string) error {
 	}
 
 	for _, m := range ms {
+		log.Printf("%+v", m)
 		if err := verifyManifestIntegrity(root, m); err != nil {
 			return errors.Wrap(err, "verifying pkg integrity")
+		}
+		if err := verifyPkgContents(root, m); err != nil {
+			return errors.Wrap(err, "verifying pkg contents")
 		}
 	}
 	return errors.New("NYI")
@@ -94,6 +102,65 @@ func verifyManifestIntegrity(root string, m pm.Meta) error {
 	}
 	if err := sig.Close(); err != nil {
 		return errors.Wrap(err, "closing manifest signature reader")
+	}
+	return nil
+}
+
+func verifyPkgContents(root string, m pm.Meta) error {
+	pn := filepath.Join(root, cache, m.Pkg())
+	man, err := getReadCloser(pn, "manifest.sha256")
+	if err != nil {
+		return errors.Wrap(err, "getting manifest reader")
+	}
+
+	cs := map[string]string{}
+	s := bufio.NewScanner(man)
+	for s.Scan() {
+		elems := strings.Split(s.Text(), "\t")
+		if len(elems) != 2 {
+			return errors.Errorf("manifest format error; got %d elements, want 2", len(elems))
+		}
+		cs[elems[1]] = elems[0]
+	}
+	if err := man.Close(); err != nil {
+		return errors.Wrap(err, "closing manifest reader")
+	}
+	if err := s.Err(); err != nil {
+		return errors.Wrap(err, "scanning manifest")
+	}
+
+	pf, err := os.Open(pn)
+	if err != nil {
+		return errors.Wrap(err, "opening pkg file")
+	}
+	tr := tar.NewReader(pf)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return errors.Wrap(err, "tar traversal")
+		}
+
+		if hdr.Name == "manifest.sha256" || hdr.Name == "manifest.sha256.asc" {
+			continue
+		}
+		if hdr.FileInfo().IsDir() {
+			continue
+		}
+		sha, ok := cs[hdr.Name]
+		if !ok {
+			return errors.Errorf("extra file %q found in tarfile!", hdr.Name)
+		}
+		sr := sha256.New()
+		if n, err := io.Copy(sr, tr); err != nil {
+			return errors.Wrapf(err, "calculating checksum after %v bytes", n)
+		}
+
+		if sha != fmt.Sprintf("%x", sr.Sum(nil)) {
+			return errors.Errorf("%q checksum was incorrect", hdr.Name)
+		}
 	}
 	return nil
 }
