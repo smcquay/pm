@@ -21,6 +21,7 @@ const usage = `pm: simple, cross-platform system package manager
 subcommands:
   available  (av)  -- print out all installable packages
   environ    (env) -- print environment information
+  install    (in)  -- install packages
   keyring    (key) -- interact with pm's OpenPGP keyring
   package    (pkg) -- create packages
   pull             -- fetch all available packages from all configured remotes
@@ -222,6 +223,14 @@ func main() {
 	case "available", "av":
 		if err := db.ListAvailable(root, os.Stdout); err != nil {
 			fatalf("pulling available packages: %v\n", err)
+		}
+	case "install", "in":
+		if len(os.Args[1:]) < 2 {
+			fatalf("pm install: insufficient args\n\nusage: pm install [pkg1, pkg2, ..., pkgN]\n")
+		}
+		pkgs := os.Args[2:]
+		if err := pkg.Install(root, pkgs); err != nil {
+			fatalf("installing: %v\n", err)
 		}
 	case "version", "v":
 		fmt.Printf("pm: version %v\n", Version)
