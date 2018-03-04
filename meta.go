@@ -2,6 +2,7 @@ package pm
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 )
 
@@ -26,6 +27,15 @@ func (m Meta) Valid() (bool, error) {
 		return false, errors.New("description cannot be empty")
 	}
 	return true, nil
+}
+
+// URL returns the http location of this package.
+func (m Meta) URL() string {
+	return fmt.Sprintf("%s/%s-%s.pkg", m.Remote.String(), m.Name, m.Version)
+}
+
+func (m Meta) String() string {
+	return m.URL()
 }
 
 // Metas is a slice of Meta
