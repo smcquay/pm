@@ -29,9 +29,14 @@ func (m Meta) Valid() (bool, error) {
 	return true, nil
 }
 
+// Pkg returns the string name the .pkg should have on disk.
+func (m Meta) Pkg() string {
+	return fmt.Sprintf("%s-%s.pkg", m.Name, m.Version)
+}
+
 // URL returns the http location of this package.
 func (m Meta) URL() string {
-	return fmt.Sprintf("%s/%s-%s.pkg", m.Remote.String(), m.Name, m.Version)
+	return fmt.Sprintf("%s/%s", m.Remote.String(), m.Pkg())
 }
 
 func (m Meta) String() string {
