@@ -51,7 +51,7 @@ func Pull(root string) error {
 
 // ListAvailable prints all installable packages
 func ListAvailable(root string, w io.Writer) error {
-	db, err := loadAvailable(root)
+	db, err := LoadAvailable(root)
 	if err != nil {
 		return errors.Wrap(err, "loading")
 	}
@@ -61,7 +61,8 @@ func ListAvailable(root string, w io.Writer) error {
 	return nil
 }
 
-func loadAvailable(root string) (pm.Available, error) {
+// LoadAvailable returns the collection of available packages
+func LoadAvailable(root string) (pm.Available, error) {
 	r := pm.Available{}
 	dbn := filepath.Join(root, rn)
 
