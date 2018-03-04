@@ -24,9 +24,9 @@ type Version string
 type Versions []Version
 
 // TODO (sm): make this semver sort?
-func (n Versions) Len() int           { return len(n) }
-func (n Versions) Swap(a, b int)      { n[a], n[b] = n[b], n[a] }
-func (n Versions) Less(a, b int) bool { return n[a] < n[b] }
+func (v Versions) Len() int           { return len(v) }
+func (v Versions) Swap(a, b int)      { v[a], v[b] = v[b], v[a] }
+func (v Versions) Less(a, b int) bool { return v[a] < v[b] }
 
 // Available is the structure used to represent the collection of all packages
 // that can be installed.
