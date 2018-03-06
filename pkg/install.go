@@ -3,11 +3,11 @@ package pkg
 import (
 	"archive/tar"
 	"bufio"
+	"compress/bzip2"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -60,7 +60,6 @@ func Install(root string, pkgs []string) error {
 	}
 
 	for _, m := range ms {
-		log.Printf("%+v", m)
 		if err := verifyManifestIntegrity(root, m); err != nil {
 			return errors.Wrap(err, "verifying pkg integrity")
 		}
@@ -75,11 +74,19 @@ func Install(root string, pkgs []string) error {
 			return errors.Wrap(err, "pre-install")
 		}
 
+		if err := expandRoot(root, m); err != nil {
+			return errors.Wrap(err, "root expansion")
+		}
+
 		if err := script(root, m, "post-install"); err != nil {
 			return errors.Wrap(err, "pre-install")
 		}
+
+		if err := os.Remove(filepath.Join(cacheDir, m.Pkg())); err != nil {
+			return errors.Wrapf(err, "cleaning up pkg %v", m.Pkg())
+		}
 	}
-	return errors.New("NYI")
+	return nil
 }
 
 func download(cache string, ms pm.Metas) error {
@@ -271,4 +278,57 @@ func script(root string, m pm.Meta, name string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func expandRoot(root string, m pm.Meta) error {
+
+	bomn := filepath.Join(root, installed, string(m.Name), "bom.sha256")
+	bf, err := os.Open(bomn)
+	if err != nil {
+		return errors.Wrap(err, "opening bom")
+	}
+
+	cs := map[string]string{}
+	s := bufio.NewScanner(bf)
+	for s.Scan() {
+		elems := strings.Split(s.Text(), "\t")
+		if len(elems) != 2 {
+			return errors.Errorf("manifest format error; got %d elements, want 2", len(elems))
+		}
+		cs[elems[1]] = elems[0]
+	}
+
+	pn := filepath.Join(root, cache, m.Pkg())
+	tbz, err := getReadCloser(pn, "root.tar.bz2")
+	if err != nil {
+		return errors.Wrap(err, "getting root.tar.bz2 reader")
+	}
+	tr := tar.NewReader(bzip2.NewReader(tbz))
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return errors.Wrap(err, "tar traversal")
+		}
+		if hdr.FileInfo().IsDir() {
+			d := filepath.Join(root, hdr.Name)
+			if err := os.MkdirAll(d, hdr.FileInfo().Mode()); err != nil {
+				return errors.Wrapf(err, "making directory %q", d)
+			}
+			continue
+		}
+		f, err := os.OpenFile(filepath.Join(root, hdr.Name), os.O_WRONLY|os.O_CREATE, hdr.FileInfo().Mode())
+		if err != nil {
+			return errors.Wrapf(err, "open output file %q", hdr.Name)
+		}
+		if n, err := io.Copy(f, tr); err != nil {
+			return errors.Wrapf(err, "copy file %q after %v bytes", hdr.Name, n)
+		}
+		if err := f.Close(); err != nil {
+			return errors.Wrapf(err, "closing %q", hdr.Name)
+		}
+	}
+	return nil
 }
