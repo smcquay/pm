@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -60,41 +61,8 @@ func Install(root string, pkgs []string) error {
 	}
 
 	for _, m := range ms {
-		already, err := db.IsInstalled(root, m)
-		if err != nil {
-			return errors.Wrapf(err, "is installed %v", m.Name)
-		}
-		if already {
-			return errors.Errorf("%v already installed!", m.Name)
-		}
-		if err := verifyManifestIntegrity(root, m); err != nil {
-			return errors.Wrap(err, "verifying pkg integrity")
-		}
-		if err := expandPkgContents(root, m); err != nil {
-			if err := os.RemoveAll(filepath.Join(root, installed, string(m.Name))); err != nil {
-				err = errors.Wrap(err, "cleaning up")
-			}
-			return errors.Wrap(err, "verifying pkg contents")
-		}
-
-		if err := script(root, m, "pre-install"); err != nil {
-			return errors.Wrap(err, "pre-install")
-		}
-
-		if err := expandRoot(root, m); err != nil {
-			return errors.Wrap(err, "root expansion")
-		}
-
-		if err := script(root, m, "post-install"); err != nil {
-			return errors.Wrap(err, "pre-install")
-		}
-
-		if err := os.Remove(filepath.Join(cacheDir, m.Pkg())); err != nil {
-			return errors.Wrapf(err, "cleaning up pkg %v", m.Pkg())
-		}
-
-		if err := db.AddInstalled(root, m); err != nil {
-			return errors.Wrapf(err, "adding ", m.Name)
+		if err := install(root, m); err != nil {
+			return errors.Wrapf(err, "installing %v", m.Name)
 		}
 	}
 	return nil
@@ -340,6 +308,52 @@ func expandRoot(root string, m pm.Meta) error {
 		if err := f.Close(); err != nil {
 			return errors.Wrapf(err, "closing %q", hdr.Name)
 		}
+	}
+	return nil
+}
+
+func install(root string, m pm.Meta) error {
+	defer func() {
+		cached := filepath.Join(root, cache, m.Pkg())
+		if !fs.Exists(cached) {
+			return
+		}
+		if err := os.Remove(cached); err != nil {
+			log.Printf("cleaning up cache: %v", err)
+		}
+	}()
+
+	already, err := db.IsInstalled(root, m)
+	if err != nil {
+		return errors.Wrapf(err, "is installed %v", m.Name)
+	}
+	if already {
+		return errors.Errorf("%v already installed!", m.Name)
+	}
+	if err := verifyManifestIntegrity(root, m); err != nil {
+		return errors.Wrap(err, "verifying pkg integrity")
+	}
+	if err := expandPkgContents(root, m); err != nil {
+		if err := os.RemoveAll(filepath.Join(root, installed, string(m.Name))); err != nil {
+			err = errors.Wrap(err, "cleaning up")
+		}
+		return errors.Wrap(err, "verifying pkg contents")
+	}
+
+	if err := script(root, m, "pre-install"); err != nil {
+		return errors.Wrap(err, "pre-install")
+	}
+
+	if err := expandRoot(root, m); err != nil {
+		return errors.Wrap(err, "root expansion")
+	}
+
+	if err := script(root, m, "post-install"); err != nil {
+		return errors.Wrap(err, "pre-install")
+	}
+
+	if err := db.AddInstalled(root, m); err != nil {
+		return errors.Wrapf(err, "adding ", m.Name)
 	}
 	return nil
 }
