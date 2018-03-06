@@ -60,6 +60,13 @@ func Install(root string, pkgs []string) error {
 	}
 
 	for _, m := range ms {
+		already, err := db.IsInstalled(root, m)
+		if err != nil {
+			return errors.Wrapf(err, "is installed %v", m.Name)
+		}
+		if already {
+			return errors.Errorf("%v already installed!", m.Name)
+		}
 		if err := verifyManifestIntegrity(root, m); err != nil {
 			return errors.Wrap(err, "verifying pkg integrity")
 		}
@@ -84,6 +91,10 @@ func Install(root string, pkgs []string) error {
 
 		if err := os.Remove(filepath.Join(cacheDir, m.Pkg())); err != nil {
 			return errors.Wrapf(err, "cleaning up pkg %v", m.Pkg())
+		}
+
+		if err := db.AddInstalled(root, m); err != nil {
+			return errors.Wrapf(err, "adding ", m.Name)
 		}
 	}
 	return nil
