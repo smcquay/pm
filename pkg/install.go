@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,7 @@ import (
 )
 
 const cache = "var/cache/pm"
+const installed = "var/lib/pm/installed"
 
 // Install fetches and installs pkgs from appropriate remotes.
 func Install(root string, pkgs []string) error {
@@ -42,6 +44,15 @@ func Install(root string, pkgs []string) error {
 	if !fs.IsDir(cacheDir) {
 		return errors.Errorf("%q is not a directory!", cacheDir)
 	}
+	installedDir := filepath.Join(root, installed)
+	if !fs.Exists(installedDir) {
+		if err := os.MkdirAll(installedDir, 0755); err != nil {
+			return errors.Wrap(err, "creating non-existent cache dir")
+		}
+	}
+	if !fs.IsDir(cacheDir) {
+		return errors.Errorf("%q is not a directory!", cacheDir)
+	}
 
 	if err := download(cacheDir, ms); err != nil {
 		return errors.Wrap(err, "downloading")
@@ -52,7 +63,10 @@ func Install(root string, pkgs []string) error {
 		if err := verifyManifestIntegrity(root, m); err != nil {
 			return errors.Wrap(err, "verifying pkg integrity")
 		}
-		if err := verifyPkgContents(root, m); err != nil {
+		if err := expandPkgContents(root, m); err != nil {
+			if err := os.RemoveAll(filepath.Join(root, installed, string(m.Name))); err != nil {
+				err = errors.Wrap(err, "cleaning up")
+			}
 			return errors.Wrap(err, "verifying pkg contents")
 		}
 	}
@@ -106,11 +120,16 @@ func verifyManifestIntegrity(root string, m pm.Meta) error {
 	return nil
 }
 
-func verifyPkgContents(root string, m pm.Meta) error {
+func expandPkgContents(root string, m pm.Meta) error {
 	pn := filepath.Join(root, cache, m.Pkg())
 	man, err := getReadCloser(pn, "manifest.sha256")
 	if err != nil {
 		return errors.Wrap(err, "getting manifest reader")
+	}
+
+	ip := filepath.Join(root, installed, string(m.Name))
+	if err := os.MkdirAll(ip, 0755); err != nil {
+		return errors.Wrapf(err, "making install dir for %q", m.Name)
 	}
 
 	cs := map[string]string{}
@@ -146,20 +165,46 @@ func verifyPkgContents(root string, m pm.Meta) error {
 		if hdr.Name == "manifest.sha256" || hdr.Name == "manifest.sha256.asc" {
 			continue
 		}
+
 		if hdr.FileInfo().IsDir() {
+			if hdr.Name != "bin" {
+				return errors.Errorf("%v is unexpected", hdr.Name)
+			}
+			if err := os.MkdirAll(filepath.Join(ip, hdr.Name), hdr.FileInfo().Mode()); err != nil {
+				return errors.Wrapf(err, "mkdir for %v", hdr.Name)
+			}
 			continue
 		}
+
 		sha, ok := cs[hdr.Name]
 		if !ok {
 			return errors.Errorf("extra file %q found in tarfile!", hdr.Name)
 		}
+
+		name := filepath.Join(ip, hdr.Name)
 		sr := sha256.New()
-		if n, err := io.Copy(sr, tr); err != nil {
-			return errors.Wrapf(err, "calculating checksum after %v bytes", n)
+		var o io.WriteCloser
+		o = close{ioutil.Discard}
+		if hdr.Name != "root.tar.bz2" {
+			f, err := os.OpenFile(filepath.Join(ip, hdr.Name), os.O_WRONLY|os.O_CREATE, hdr.FileInfo().Mode())
+			if err != nil {
+				return errors.Wrap(err, "open file in install dir")
+			}
+			o = f
+		}
+
+		w := io.MultiWriter(o, sr)
+
+		if n, err := io.Copy(w, tr); err != nil {
+			return errors.Wrapf(err, "copying file %q after %v bytes", hdr.Name, n)
 		}
 
 		if sha != fmt.Sprintf("%x", sr.Sum(nil)) {
 			return errors.Errorf("%q checksum was incorrect", hdr.Name)
+		}
+
+		if err := o.Close(); err != nil {
+			return errors.Wrapf(err, "closing %v", name)
 		}
 	}
 	return nil
@@ -197,4 +242,13 @@ func getReadCloser(tn, fn string) (io.ReadCloser, error) {
 		}
 	}
 	return nil, errors.Errorf("%q not found", fn)
+}
+
+// close should be used to wrap ioutil.Discard to give it a noop Close method.
+type close struct {
+	io.Writer
+}
+
+func (close) Close() error {
+	return nil
 }
