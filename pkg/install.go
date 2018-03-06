@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -68,6 +69,14 @@ func Install(root string, pkgs []string) error {
 				err = errors.Wrap(err, "cleaning up")
 			}
 			return errors.Wrap(err, "verifying pkg contents")
+		}
+
+		if err := script(root, m, "pre-install"); err != nil {
+			return errors.Wrap(err, "pre-install")
+		}
+
+		if err := script(root, m, "post-install"); err != nil {
+			return errors.Wrap(err, "pre-install")
 		}
 	}
 	return errors.New("NYI")
@@ -251,4 +260,15 @@ type close struct {
 
 func (close) Close() error {
 	return nil
+}
+
+func script(root string, m pm.Meta, name string) error {
+	bin := filepath.Join(root, installed, string(m.Name), "bin", name)
+	if !fs.Exists(bin) {
+		return nil
+	}
+	cmd := exec.Command(bin)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
