@@ -23,6 +23,7 @@ subcommands:
   environ    (env) -- print environment information
   install    (in)  -- install packages
   keyring    (key) -- interact with pm's OpenPGP keyring
+  ls               -- list installed packages
   package    (pkg) -- create packages
   pull             -- fetch all available packages from all configured remotes
   remote           -- configure remote pmd servers
@@ -231,6 +232,10 @@ func main() {
 		pkgs := os.Args[2:]
 		if err := pkg.Install(root, pkgs); err != nil {
 			fatalf("installing: %v\n", err)
+		}
+	case "ls":
+		if err := db.ListInstalled(root, os.Stdout); err != nil {
+			fatalf("listing installed: %v\n", err)
 		}
 	case "version", "v":
 		fmt.Printf("pm: version %v\n", Version)

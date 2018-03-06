@@ -2,6 +2,8 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -31,6 +33,19 @@ func IsInstalled(root string, m pm.Meta) (bool, error) {
 
 	_, r := db[m.Name]
 	return r, nil
+}
+
+// ListInstalled pretty prints the installed database to w.
+func ListInstalled(root string, w io.Writer) error {
+	db, err := loadi(root)
+	if err != nil {
+		return errors.Wrap(err, "loading installed db")
+	}
+
+	for m := range db.Traverse() {
+		fmt.Fprintf(w, "%v\t%v\t%v\n", m.Name, m.Version, m.Remote.String())
+	}
+	return nil
 }
 
 func loadi(root string) (pm.Installed, error) {
