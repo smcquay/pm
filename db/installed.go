@@ -48,6 +48,10 @@ func ListInstalled(root string, w io.Writer) error {
 	return nil
 }
 
+func LoadInstalled(root string) (pm.Installed, error) {
+	return loadi(root)
+}
+
 func loadi(root string) (pm.Installed, error) {
 	r := pm.Installed{}
 	dbn := filepath.Join(root, in)

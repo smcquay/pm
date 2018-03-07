@@ -1,6 +1,9 @@
 package pm
 
-import "sort"
+import (
+	"errors"
+	"sort"
+)
 
 // Installed tracks installed packages.
 type Installed map[Name]Meta
@@ -21,4 +24,9 @@ func (i Installed) Traverse() <-chan Meta {
 		close(r)
 	}()
 	return r
+}
+
+// Removable calculates if the packages requested in "in" can all be removed.
+func (i Installed) Removable(names []string) (Metas, error) {
+	return nil, errors.New("NYI")
 }

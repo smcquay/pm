@@ -27,6 +27,7 @@ subcommands:
   package    (pkg) -- create packages
   pull             -- fetch all available packages from all configured remotes
   remote           -- configure remote pmd servers
+  rm               -- remove packages
   version    (v)   -- print version information
 `
 
@@ -236,6 +237,14 @@ func main() {
 	case "ls":
 		if err := db.ListInstalled(root, os.Stdout); err != nil {
 			fatalf("listing installed: %v\n", err)
+		}
+	case "rm":
+		if len(os.Args[1:]) < 2 {
+			fatalf("pm rm: insufficient args\n\nusage: pm rm [pkg1, pkg2, ..., pkgN]\n")
+		}
+		pkgs := os.Args[2:]
+		if err := pkg.Remove(root, pkgs); err != nil {
+			fatalf("removing: %v\n", err)
 		}
 	case "version", "v":
 		fmt.Printf("pm: version %v\n", Version)
