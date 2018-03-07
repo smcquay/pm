@@ -24,6 +24,16 @@ func AddInstalled(root string, m pm.Meta) error {
 	return savei(root, db)
 }
 
+// RemoveInstalled adds m to the installed package database.
+func RemoveInstalled(root string, m pm.Meta) error {
+	db, err := loadi(root)
+	if err != nil {
+		return errors.Wrap(err, "loading installed db")
+	}
+	delete(db, m.Name)
+	return savei(root, db)
+}
+
 // IsInstalled checks if m is in the installed package database.
 func IsInstalled(root string, m pm.Meta) (bool, error) {
 	db, err := loadi(root)
