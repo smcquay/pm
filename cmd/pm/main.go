@@ -235,8 +235,14 @@ func main() {
 			fatalf("installing: %v\n", err)
 		}
 	case "ls":
-		if err := db.ListInstalled(root, os.Stdout); err != nil {
-			fatalf("listing installed: %v\n", err)
+		if len(os.Args[1:]) == 1 {
+			if err := db.ListInstalled(root, os.Stdout); err != nil {
+				fatalf("listing installed: %v\n", err)
+			}
+		} else {
+			if err := db.ListInstalledFiles(root, os.Stdout, os.Args[2:]); err != nil {
+				fatalf("listing installed: %v\n", err)
+			}
 		}
 	case "rm":
 		if len(os.Args[1:]) < 2 {

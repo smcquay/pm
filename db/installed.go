@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"github.com/pkg/errors"
 	"mcquay.me/fs"
@@ -54,6 +55,44 @@ func ListInstalled(root string, w io.Writer) error {
 
 	for m := range db.Traverse() {
 		fmt.Fprintf(w, "%v\t%v\t%v\n", m.Name, m.Version, m.Remote.String())
+	}
+	return nil
+}
+
+// ListInstalledFiles prints the contents of a package.
+func ListInstalledFiles(root string, w io.Writer, names []string) error {
+	for _, name := range names {
+		ok, err := IsInstalled(root, pm.Meta{Name: pm.Name(name)})
+		if err != nil {
+			return errors.Wrap(err, "is installed")
+		}
+		if !ok {
+			return fmt.Errorf("%v not installed", name)
+		}
+	}
+
+	for _, name := range names {
+		fn := filepath.Join(root, "var", "lib", "pm", "installed", name, "bom.sha256")
+		f, err := os.Open(fn)
+		if err != nil {
+			return errors.Wrapf(err, "opening %v's bom", name)
+		}
+		bom, err := pm.ParseCS(f)
+		if err != nil {
+			return errors.Wrapf(err, "parsing %v's bom", name)
+		}
+		if err := f.Close(); err != nil {
+			return errors.Wrapf(err, "closing %v's bom", name)
+		}
+
+		ks := []string{}
+		for k := range bom {
+			ks = append(ks, k)
+		}
+		sort.Strings(ks)
+		for _, k := range ks {
+			fmt.Fprintf(w, "%v\n", k)
+		}
 	}
 	return nil
 }
